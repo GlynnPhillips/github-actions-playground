@@ -1,5 +1,4 @@
 name: Pull Request Logger
-
 on: [push]
 
 jobs:
@@ -7,8 +6,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Use Node 12.x
       uses: actions/setup-node@v1
       with:
         node-version: 12.x
+      env:
+        PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
     - run: npm install
+    - run: PERSONAL_ACCESS_TOKEN=${{ secrets.PERSONAL_ACCESS_TOKEN }} node .github/workflows/pull-request-logger.js
