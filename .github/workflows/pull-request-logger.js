@@ -21,42 +21,74 @@ class ContributionTracker {
 		this.githubOrgId = githubOrgId;
 		this.githubTeamName = githubTeamName;
 		this.githubAccessToken = githubAccessToken;
+
+		if (!this.teamMembers) {
+			this.teamMembers = this.fetchTeamMembers();
+			console.log(this.teamMembers)
+		}
 	}
 
-	openedPullRequest(actionPayload) {
+	fetchTeamMembers() {
+		return fetch(`https://api.github.com/organizations/${this.githubOrgId}/teams/${this.githubTeamName}/members`, {
+			headers: {
+				'Authorization': `token ${this.githubAccessToken}`
+			}
+		})
+		.then(response => response.json())
+		.then(teamMembers => teamMembers);
+	}
 
-		const payload = JSON.stringify(actionPayload, undefined, 2)
+	pullRequestOpen(actionPayload) {
 		const isOpenedPullRequest = actionPayload.pull_request && actionPayload.action === 'opened';
 
 		if (!isOpenedPullRequest) {
+			console.log('pullRequestOpen: Tracking skipped as action payload is unrelated');
+
 			return;
 		}
 
 		const pullRequestAuthor = actionPayload.pull_request.user.id;
 
-		console.log(pullRequestAuthor);
+		const openedByTeamMember = this.teamMembers.some(member => member.id = pullRequestAuthor);
 
-		fetch(`https://api.github.com/organizations/${this.githubOrgId}/teams/${this.githubTeamName}/members`, {
-			headers: {
-				'Authorization': `token ${this.githubAccessToken}`
-			}
-		})
-		.then(response => {
-			return response.json();
-		})
-		.then(teamMembers => {
-			const openedByTeamMember = teamMembers.some(member => member.id = pullRequestAuthor);
+		if (openedByTeamMember) {
+			console.log('pullRequestOpen: Tracked as being opened by a team members')
+		} else {
+			console.log('pullRequestOpen: Tracked as being opened by someone outside of the team')
+		}
+	}
 
-			if (openedByTeamMember) {
-				console.log('PULL REQUEST OPENED BY MEMBER')
+	pullRequestMerge(actionPayload) {
+		const isMergedPullRequest = actionPayload.pull_request && actionPayload.action === 'merged';
+
+		if (!isMergedPullRequest) {
+			console.log('pullRequestMerged: Tracking skipped as action payload is unrelated');
+
+			return;
+		}
+
+		const pullRequestAuthor = actionPayload.pull_request.user.id;
+		const pullRequestMerger = actionPayload.pull_request.merged_by.id;
+
+		const openedByTeamMember = this.teamMembers.some(member => member.id = pullRequestAuthor);
+		const mergedByTeamMember = this.teamMembers.some(member => member.id = pullRequestMerger);
+
+		if (openedByTeamMember) {
+			if (mergedByTeamMember) {
+				console.log('pullRequestMerge: Tracked as being opened and marged by a team member');
 			} else {
-				console.log('PULL REQUEST OPENED BY SOMEONE ELSE')
+				console.log('pullRequestMerge: Tracked as being opened by a team member and marged by a non-team member');
 			}
-		});
+		} else {
+			if (mergedByTeamMember) {
+				console.log('pullRequestMerge: Tracked as being opened by a non-team member and marged by a team member');
+			} else {
+				console.log('pullRequestMerge: Tracked as being opened and merged by a non-team member');
+			}
+		}
+
 	}
 };
-
-
 
 const orgId = process.env.ORG_ID_GITHUB;
 const teamName = process.env.TEAM_NAME_GITHUB;
@@ -64,7 +96,6 @@ const githubToken = process.env.PERSONAL_ACCESS_TOKEN;
 
 try {
 	const payload = JSON.stringify(github.context.payload, undefined, 2)
-	console.log(`The event payload: ${payload}`);
 
 	const tracker = new ContributionTracker({
 		githubOrgId: orgId,
@@ -72,7 +103,7 @@ try {
 		githubAccessToken: githubToken
 	});
 
-	tracker.openedPullRequest(github.context.payload);
+	tracker.pullRequestOpen(github.context.payload);
 
 } catch (error) {
 	core.setFailed(error.message);
