@@ -12,5 +12,7 @@ jobs:
         node-version: 12.x
       env:
         PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        ORG_ID_GITHUB: ${{ secrets.ORG_ID_GITHUB }}
+        TEAM_NAME_GITHUB: ${{ secrets.TEAM_NAME_GITHUB }}
     - run: npm install
-    - run: PERSONAL_ACCESS_TOKEN=${{ secrets.PERSONAL_ACCESS_TOKEN }} node .github/workflows/pull-request-logger.js
+    - run: PERSONAL_ACCESS_TOKEN=${{ secrets.PERSONAL_ACCESS_TOKEN }} ORG_ID_GITHUB=${{ secrets.ORG_ID_GITHUB }} TEAM_NAME_GITHUB=${{ secrets.TEAM_NAME_GITHUB }} node .github/workflows/pull-request-logger.js
