@@ -34,7 +34,9 @@ class ContributionTracker {
 
 		const pullRequestAuthor = actionPayload.pull_request.user.id;
 
-		fetch(`https://api.github.com/organizations/${this.this.githubOrgId}/teams/${this.githubTeamName}/members`, {
+		console.log(pullRequestAuthor);
+
+		fetch(`https://api.github.com/organizations/${this.githubOrgId}/teams/${this.githubTeamName}/members`, {
 			headers: {
 				'Authorization': `token ${this.githubAccessToken}`
 			}
