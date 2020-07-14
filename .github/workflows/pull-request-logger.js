@@ -24,16 +24,32 @@ class ContributionTracker {
 	}
 
 	openedPullRequest(actionPayload) {
-		fetch(`https://api.github.com/organizations/${orgId}/teams/${teamName}/members`, {
+
+		const payload = JSON.stringify(actionPayload, undefined, 2)
+		const isOpenedPullRequest = actionPayload.pull_request && actionPayload.action === 'opened';
+
+		if (!isOpenedPullRequest) {
+			return;
+		}
+
+		const pullRequestAuthor = actionPayload.pull_request.user.id;
+
+		fetch(`https://api.github.com/organizations/${this.this.githubOrgId}/teams/${this.githubTeamName}/members`, {
 			headers: {
-				'Authorization': `token ${process.env.PERSONAL_ACCESS_TOKEN}`
+				'Authorization': `token ${this.githubAccessToken}`
 			}
 		})
 		.then(response => {
 			return response.json();
 		})
-		.then(payload => {
-			console.log(payload);
+		.then(teamMembers => {
+			const openedByTeamMember = teamMembers.some(member => member.id = pullRequestAuthor);
+
+			if (openedByTeamMember) {
+				console.log('PULL REQUEST OPENED BY MEMBER')
+			} else {
+				console.log('PULL REQUEST OPENED BY SOMEONE ELSE')
+			}
 		});
 	}
 };
